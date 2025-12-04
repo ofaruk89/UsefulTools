@@ -6,5 +6,5 @@ https://omerfarukgul.com.tr/aof/
 
 Konum koordinatlarınızı google haritalardan  alabilirsiniz
 
-<img width="1204" height="1204" alt="image" src="https://github.com/user-attachments/assets/ea188370-a577-4ee3-842c-5ec809f65933" />
+<img width="520" height="207" alt="image" src="https://github.com/user-attachments/assets/56115379-c425-4a4d-81e5-16f9d69d0cbe" />
 
