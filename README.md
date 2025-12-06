@@ -3,6 +3,7 @@ Aöf Okul Bina Mesafesi Hesaplama
 
 https://omerfarukgul.com.tr/aof/
 
+https://aosogrenci.anadolu.edu.tr/bilgi-guncelleme/sinav-merkezi-secimi
 
 Konum koordinatlarınızı google haritalardan  alabilirsiniz
 
