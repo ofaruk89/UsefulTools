@@ -190,11 +190,60 @@ $(document).ready(function() {
         });
     });
 
+    // --- Kopyalama İşlemi (HTTP ve HTTPS Uyumlu) ---
     $(document).on('click', '.copy-btn', function() {
         let url = $(this).data('url');
-        navigator.clipboard.writeText(url).then(() => {
-            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-            Toast.fire({ icon: 'success', title: 'Kopyalandı' });
-        });
+        
+        // 1. Yöntem: Modern API (HTTPS ise çalışır)
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url).then(() => {
+                showCopyToast();
+            }).catch(err => {
+                console.error('Modern copy hatası:', err);
+                fallbackCopyTextToClipboard(url); // Hata verirse eskiye düş
+            });
+        } else {
+            // 2. Yöntem: Fallback (HTTP için textarea yöntemi)
+            fallbackCopyTextToClipboard(url);
+        }
     });
+
+    // HTTP için eski usul kopyalama fonksiyonu
+    function fallbackCopyTextToClipboard(text) {
+        var textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // Görünmez yap ama DOM'da olsun
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            var successful = document.execCommand('copy');
+            if(successful) {
+                showCopyToast();
+            } else {
+                Swal.fire('Hata', 'Kopyalama başarısız', 'error');
+            }
+        } catch (err) {
+            console.error('Fallback copy hatası:', err);
+            Swal.fire('Hata', 'Kopyalanamadı', 'error');
+        }
+
+        document.body.removeChild(textArea);
+    }
+
+    function showCopyToast() {
+        const Toast = Swal.mixin({ 
+            toast: true, 
+            position: 'top-end', 
+            showConfirmButton: false, 
+            timer: 2000 
+        });
+        Toast.fire({ icon: 'success', title: 'Kopyalandı' });
+    }
 });
