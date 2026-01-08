@@ -16,10 +16,9 @@ $(document).ready(function() {
         // 2. Auth Durumunu Kontrol Et (Cookie var mı?)
         $.post('api.php', { action: 'check_auth' }, function(res) {
             if (res.status === 'success' && res.logged_in) {
-                // Eğer cookie varsa:
-                rememberMe.prop('checked', true); // Tick at
-                passInput.val('********');        // Sembolik şifre koy
-                passInput.prop('disabled', true); // İstersen kilitli gibi göster (opsiyonel)
+                rememberMe.prop('checked', true);
+                passInput.val('********');        
+                passInput.prop('disabled', true); 
             } else {
                 rememberMe.prop('checked', false);
                 passInput.val('');
@@ -28,45 +27,39 @@ $(document).ready(function() {
         });
     }
 
-    // --- CHECKBOX MANTIĞI (En Önemli Kısım) ---
+    // --- CHECKBOX MANTIĞI ---
     rememberMe.on('change', function() {
         const isChecked = $(this).is(':checked');
         const password = passInput.val();
 
         if (isChecked) {
-            // -- Kullanıcı "Beni Hatırla" dedi --
             if (password.trim() === '' || password === '********') {
-                // Şifre boşsa veya zaten dummy ise (ama sistemden düştüyse)
-                // Şifre girmesini iste
                 Swal.fire({
                     toast: true, position: 'top-end', icon: 'warning', 
                     title: 'Lütfen önce şifreyi girin', showConfirmButton: false, timer: 3000 
                 });
-                $(this).prop('checked', false); // Ticki geri al
+                $(this).prop('checked', false);
                 passInput.prop('disabled', false);
                 passInput.focus();
             } else {
-                // Şifre girilmiş, Backend'e sor ve Cookie oluştur
                 $.post('api.php', { action: 'toggle_remember', mode: 'on', password: password }, function(res) {
                     if (res.status === 'success') {
                         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
                         Toast.fire({ icon: 'success', title: 'Tarayıcı Hatırlandı' });
-                        passInput.val('********'); // Sembolik hale getir
-                        passInput.prop('disabled', true); // Kilitle (Opsiyonel)
+                        passInput.val('********');
+                        passInput.prop('disabled', true);
                     } else {
-                        // Şifre yanlışsa
                         Swal.fire('Hata', 'Girdiğiniz şifre yanlış!', 'error');
-                        rememberMe.prop('checked', false); // Ticki geri al
+                        rememberMe.prop('checked', false);
                     }
                 });
             }
         } else {
-            // -- Kullanıcı Ticki Kaldırdı (Unut) --
             $.post('api.php', { action: 'toggle_remember', mode: 'off' }, function(res) {
                 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
                 Toast.fire({ icon: 'info', title: 'Beni Hatırla Kapatıldı' });
-                passInput.val(''); // Kutuyu temizle
-                passInput.prop('disabled', false); // Kilidi aç
+                passInput.val('');
+                passInput.prop('disabled', false);
                 passInput.focus();
             });
         }
@@ -76,7 +69,6 @@ $(document).ready(function() {
     function loadFiles() {
         $.get('api.php?action=list', function(res) {
             fileListBody.empty();
-            // Sistem Bilgilerini UI'a Yaz
             if(res.info) {
                 $('#info-post-limit').text(res.info.post_max);
                 $('#info-upload-limit').text(res.info.upload_max);
@@ -88,7 +80,6 @@ $(document).ready(function() {
                     $('#info-allowed-ext').text("HEPSİ");
                 }
             }
-            // Dosyaları Yaz
             if (res.files && res.files.length > 0) {
                 res.files.forEach(file => {
                     let row = `
@@ -108,15 +99,33 @@ $(document).ready(function() {
         });
     }
 
-    // --- Upload ve Diğer İşlemler ---
-    dropArea.on('click', () => fileElem.click());
-    dropArea.on('dragenter dragover', (e) => { e.preventDefault(); dropArea.addClass('highlight'); });
-    dropArea.on('dragleave drop', (e) => { e.preventDefault(); dropArea.removeClass('highlight'); });
+    // --- UPLOAD TETİKLEME DÜZELTMESİ (SONSUZ DÖNGÜ FİX) ---
+    dropArea.on('click', function() {
+        fileElem.click();
+    });
+
+    // Inputa tıklandığında olayın yukarı (dropArea'ya) sıçramasını engelle
+    fileElem.on('click', function(e) {
+        e.stopPropagation(); 
+    });
+
+    // Drag & Drop Görsel Efektleri
+    dropArea.on('dragenter dragover', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        dropArea.addClass('highlight'); 
+    });
+    
+    dropArea.on('dragleave drop', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        dropArea.removeClass('highlight'); 
+    });
+    
     dropArea.on('drop', (e) => handleFiles(e.originalEvent.dataTransfer.files));
     fileElem.on('change', function() { handleFiles(this.files); });
 
     function handleFiles(files) {
-        // Eğer remember me YOKSA ve şifre kutusu BOŞSA uyarı ver
         if (!rememberMe.is(':checked') && passInput.val().trim() === "") {
             Swal.fire('Hata', 'Lütfen şifre giriniz!', 'warning');
             return;
@@ -128,9 +137,6 @@ $(document).ready(function() {
         let formData = new FormData();
         formData.append('file', file);
         formData.append('action', 'upload');
-        // Backend zaten cookie kontrolü yapıyor.
-        // Eğer cookie yoksa inputtaki şifreyi gönder. 
-        // Eğer cookie varsa inputta ***** olsa bile backend onu görmezden gelir cookie'ye bakar.
         formData.append('password', passInput.val());
 
         let id = 'prog-' + Math.random().toString(36).substr(2, 9);
@@ -190,60 +196,45 @@ $(document).ready(function() {
         });
     });
 
-    // --- Kopyalama İşlemi (HTTP ve HTTPS Uyumlu) ---
+    // --- KOPYALAMA DÜZELTMESİ (HTTP & HTTPS) ---
     $(document).on('click', '.copy-btn', function() {
         let url = $(this).data('url');
         
-        // 1. Yöntem: Modern API (HTTPS ise çalışır)
+        // 1. Yöntem: Modern API (HTTPS ise)
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(url).then(() => {
                 showCopyToast();
             }).catch(err => {
-                console.error('Modern copy hatası:', err);
-                fallbackCopyTextToClipboard(url); // Hata verirse eskiye düş
+                fallbackCopyTextToClipboard(url);
             });
         } else {
-            // 2. Yöntem: Fallback (HTTP için textarea yöntemi)
+            // 2. Yöntem: HTTP Fallback
             fallbackCopyTextToClipboard(url);
         }
     });
 
-    // HTTP için eski usul kopyalama fonksiyonu
     function fallbackCopyTextToClipboard(text) {
         var textArea = document.createElement("textarea");
         textArea.value = text;
-        
-        // Görünmez yap ama DOM'da olsun
         textArea.style.top = "0";
         textArea.style.left = "0";
         textArea.style.position = "fixed";
-
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
 
         try {
             var successful = document.execCommand('copy');
-            if(successful) {
-                showCopyToast();
-            } else {
-                Swal.fire('Hata', 'Kopyalama başarısız', 'error');
-            }
+            if(successful) showCopyToast();
+            else Swal.fire('Hata', 'Kopyalanamadı', 'error');
         } catch (err) {
-            console.error('Fallback copy hatası:', err);
-            Swal.fire('Hata', 'Kopyalanamadı', 'error');
+            Swal.fire('Hata', 'Tarayıcı izin vermedi', 'error');
         }
-
         document.body.removeChild(textArea);
     }
 
     function showCopyToast() {
-        const Toast = Swal.mixin({ 
-            toast: true, 
-            position: 'top-end', 
-            showConfirmButton: false, 
-            timer: 2000 
-        });
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
         Toast.fire({ icon: 'success', title: 'Kopyalandı' });
     }
 });
